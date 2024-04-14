@@ -11,3 +11,4 @@
 /Users/jakubkindracki/RiderProjects/LAB8_AiSD2/LAB8_AiSD2/obj/Debug/net4.7.1/LAB8_AiSD2.csproj.CopyComplete
 /Users/jakubkindracki/RiderProjects/LAB8_AiSD2/LAB8_AiSD2/obj/Debug/net4.7.1/LAB8_AiSD2.exe
 /Users/jakubkindracki/RiderProjects/LAB8_AiSD2/LAB8_AiSD2/obj/Debug/net4.7.1/LAB8_AiSD2.pdb
+/Users/jakubkindracki/RiderProjects/LAB8_AiSD2/LAB8_AiSD2/obj/Debug/net4.7.1/LAB8_AiSD2.sourcelink.json
