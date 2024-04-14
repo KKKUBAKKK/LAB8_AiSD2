@@ -13,55 +13,55 @@ namespace ASD
         /// <returns>Odpowiedź na pytanie, czy istnieje budowla zadowalająca Kazika.</returns>
         public bool Stage1ExistsBuilding(int l, int h, int[,] pleasure)
         {
-            int rows = l;
-            int columns = h;
-            DiGraph<int> g = new DiGraph<int>(rows * columns + 2);
-            int start = rows * columns;
-            int end = rows * columns + 1;
-            int[,] values = new int[rows, columns];
+            int X = l;
+            int Y = h;
+            DiGraph<int> g = new DiGraph<int>(X * Y + 2);
+            int start = X * Y;
+            int end = X * Y + 1;
+            int[,] values = new int[X, Y];
 
-            for (int r = rows - 1; r >= 0; r--)
+            for (int y = Y - 1; y >= 0; y--)
             {
-                for (int c = columns - 1 - r; c >= 0; c--)
+                for (int x = X - 1 - y; x >= 0; x--)
                 {
-                    int ind = r * columns + c;
+                    int ind = y * X + x;
 
-                    if (pleasure[r, c] > 0)
+                    if (pleasure[x, y] > 0)
                     {
-                        g.AddEdge(start, ind, pleasure[r, c]);
-                        values[r, c] = pleasure[r, c];
+                        g.AddEdge(start, ind, pleasure[x, y]);
+                        values[x, y] = pleasure[x, y];
 
-                        if (pleasure[r, c] > 1 && r > 0)
+                        if (pleasure[x, y] > 1 && y > 0)
                         {
-                            g.AddEdge(ind, ind - columns, pleasure[r, c] - 1);
-                            g.AddEdge(ind, ind - columns + 1, pleasure[r, c] - 1);
+                            g.AddEdge(ind, ind - X, pleasure[x, y] - 1);
+                            g.AddEdge(ind, ind - X + 1, pleasure[x, y] - 1);
                         }
                     }
 
-                    if (r + 1 < rows)
+                    if (y + 1 < Y)
                     {
-                        int parent = ind + columns;
-                        if (values[r + 1, c] > 1)
+                        int parent = ind + X;
+                        if (values[x, y + 1] > 1)
                         {
-                            g.AddEdge(parent, ind, values[r + 1, c] - 1);
-                            values[r, c] += values[r + 1, c] - 1;
+                            g.AddEdge(parent, ind, values[x, y + 1] - 1);
+                            values[x, y] += values[x, y + 1] - 1;
                         }
 
                         parent -= 1;
-                        if (c - 1 >= 0 && values[r + 1, c - 1] > 1)
+                        if (x - 1 >= 0 && values[x - 1, y + 1] > 1)
                         {
-                            g.AddEdge(parent, ind, values[r + 1, c - 1] - 1);
-                            values[r, c] += values[r + 1, c - 1] - 1;
+                            g.AddEdge(parent, ind, values[x - 1, y + 1] - 1);
+                            values[x, y] += values[x - 1, y + 1] - 1;
                         }
                     }
                     
                 }
             }
 
-            for (int i = 0; i < columns; i++)
+            for (int i = 0; i < Y; i++)
             {
-                if (values[0, i] > 1)
-                    g.AddEdge(i, end, values[0, i] - 1);
+                if (values[i, 0] > 1)
+                    g.AddEdge(i, end, values[i, 0] - 1);
             }
 
             (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
