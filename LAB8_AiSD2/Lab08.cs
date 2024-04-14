@@ -13,72 +13,60 @@ namespace ASD
         /// <returns>Odpowiedź na pytanie, czy istnieje budowla zadowalająca Kazika.</returns>
         public bool Stage1ExistsBuilding(int l, int h, int[,] pleasure)
         {
-            DiGraph<int> g = new DiGraph<int>(l * h + 2);
-            int start = l * h;
-            int end = l * h + 1;
-            for (int j = 0; j < l; j++)
-            {
-                g.AddEdge(j, end, Int32.MaxValue);
-            }
+            int rows = l;
+            int columns = h;
+            DiGraph<int> g = new DiGraph<int>(rows * columns + 2);
+            int start = rows * columns;
+            int end = rows * columns + 1;
+            int[,] values = new int[rows, columns];
 
-            int[,] currentPleasure = new int[h * l, 3];
-            // for (int i = 0; i < l; i++)
-            //     currentPleasure[0, i] = pleasure[0, i];
-            // int columns = l;
-            // int rows = h;
-            for (int i = 1; i < l; i++)
+            for (int r = rows - 1; r >= 0; r--)
             {
-                for (int j = 0; j < h - 1; j++)
+                for (int c = columns - 1 - r; c >= 0; c--)
                 {
-                    if (pleasure[i, j] - 1 > 0)
-                    {
-                        int ind = i * h + j;
-                        g.AddEdge(start, ind, pleasure[i, j]);
-                        
-                        g.AddEdge(ind, ind - h, pleasure[i, j] - 1);
-                        g.AddEdge(ind, ind - h + 1, pleasure[i, j] - 1);
+                    int ind = r * columns + c;
 
-                        currentPleasure[ind, 0] = pleasure[i, j];
-                        currentPleasure[ind - h, 1] = pleasure[i, j] - 1;
-                        currentPleasure[ind - h + 1, 2] = pleasure[i, j] - 1;
+                    if (pleasure[r, c] > 0)
+                    {
+                        g.AddEdge(start, ind, pleasure[r, c]);
+                        values[r, c] = pleasure[r, c];
+
+                        if (pleasure[r, c] > 1 && r > 0)
+                        {
+                            g.AddEdge(ind, ind - columns, pleasure[r, c] - 1);
+                            g.AddEdge(ind, ind - columns + 1, pleasure[r, c] - 1);
+                        }
                     }
+
+                    if (r + 1 < rows)
+                    {
+                        int parent = ind + columns;
+                        if (values[r + 1, c] > 1)
+                        {
+                            g.AddEdge(parent, ind, values[r + 1, c] - 1);
+                            values[r, c] += values[r + 1, c] - 1;
+                        }
+
+                        parent -= 1;
+                        if (c - 1 >= 0 && values[r + 1, c - 1] > 1)
+                        {
+                            g.AddEdge(parent, ind, values[r + 1, c - 1] - 1);
+                            values[r, c] += values[r + 1, c - 1] - 1;
+                        }
+                    }
+                    
                 }
             }
 
-            // for (int i = l - 2; i >= 0; i--)
-            // {
-            //     for (int j = h - 2; j >= 0; j--)
-            //     {
-            //         int ind = i * h + j;
-            //         int parent1 = ind + h;
-            //         int weight1 = 0;
-            //         if (currentPleasure[parent1, 0] > 1)
-            //             weight1 = currentPleasure[parent1, 0] - 1;
-            //         if (currentPleasure[parent1, 1] > 1 && currentPleasure[parent1, 1] > weight1)
-            //             weight1 = currentPleasure[parent1, 1] - 1;
-            //         if (currentPleasure[parent1, 2] > 1 && currentPleasure[parent1, 2] > weight1)
-            //             weight1 = currentPleasure[parent1, 2] - 1;
-            //
-            //         if (weight1 > 0)
-            //             g.AddEdge(parent1, ind, weight1);
-            //
-            //         parent1 = parent1 - 1;
-            //         weight1 = 0;
-            //         if (currentPleasure[parent1, 0] > 1)
-            //             weight1 = currentPleasure[parent1, 0] - 1;
-            //         if (currentPleasure[parent1, 1] > 1 && currentPleasure[parent1, 1] > weight1)
-            //             weight1 = currentPleasure[parent1, 1] - 1;
-            //         if (currentPleasure[parent1, 2] > 1 && currentPleasure[parent1, 2] > weight1)
-            //             weight1 = currentPleasure[parent1, 2] - 1;
-            //
-            //         if (weight1 > 0)
-            //             g.AddEdge(parent1, ind, weight1);
-            //     }
-            // }
+            for (int i = 0; i < columns; i++)
+            {
+                if (values[0, i] > 1)
+                    g.AddEdge(i, end, values[0, i] - 1);
+            }
 
-            (int flowValue, var f) = Flows.FordFulkerson(g, start, end);
-            
-            return flowValue > 0;
+            (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
+
+            return maxFlow > 0;
         }
 
         /// <summary>Etap II: kompletny projekt</summary>
