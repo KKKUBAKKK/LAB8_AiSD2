@@ -18,45 +18,37 @@ namespace ASD
             DiGraph<int> g = new DiGraph<int>(X * Y + 2);
             int start = X * Y;
             int end = X * Y + 1;
-            int[,] visited = new int[X, Y];
+            int allFlows = 0;
 
             for (int y = Y - 1; y > 0; y--)
             {
                 for (int x = X - 1 - y; x >= 0; x--)
                 {
-                    // Saving current index
                     int ind = y * X + x;
-
-                    // If pleasure is > 1 adding edge from start to ind with weight = pleasure - 1
-                    if (pleasure[x, y] > 1)
+                    if (pleasure[x, y] > 0)
                     {
-                        g.AddEdge(start, ind, pleasure[x, y] - 1);
+                        g.AddEdge(start, ind, pleasure[x, y]);
+                        allFlows += pleasure[x, y];
                     }
-                    
-                    // Adding pleasure to visited (without subtracting 1 for now)
-                    visited[x, y] += pleasure[x, y];
-
-                    // If visited is > 1 adding edges to children
-                    if (visited[x, y] > 1)
-                    {
-                        g.AddEdge(ind, ind - X, visited[x, y] - 1);
-                        visited[x, y - 1] += visited[x, y] - 1; 
-                        g.AddEdge(ind, ind - X + 1, visited[x, y] - 1);
-                        visited[x + 1, y - 1] += visited[x, y] - 1; 
-                    }
+                    g.AddEdge(ind, end, 1);
+                    g.AddEdge(ind, ind - X, Int32.MaxValue);
+                    g.AddEdge(ind, ind - X + 1, Int32.MaxValue);
                 }
             }
 
-            // If values in the 0 row are positive add edges from them to the end
-            for (int x = X - 1; x >= 0; x--)
+            for (int x = 0; x < X; x++)
             {
-                if (visited[x, 0] > 0)
-                    g.AddEdge(x, end, visited[x, 0]);
+                if (pleasure[x, 0] > 0)
+                {
+                    g.AddEdge(start, x, pleasure[x, 0]);
+                    allFlows += pleasure[x, 0];
+                }
+                g.AddEdge(x, end, 1);
             }
 
             (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
 
-            return maxFlow > 0;
+            return allFlows > maxFlow;
         }
 
         /// <summary>Etap II: kompletny projekt</summary>
