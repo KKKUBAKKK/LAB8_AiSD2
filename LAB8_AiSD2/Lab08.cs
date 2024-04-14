@@ -18,50 +18,40 @@ namespace ASD
             DiGraph<int> g = new DiGraph<int>(X * Y + 2);
             int start = X * Y;
             int end = X * Y + 1;
-            int[,] values = new int[X, Y];
+            int[,] visited = new int[X, Y];
 
-            for (int y = Y - 1; y >= 0; y--)
+            for (int y = Y - 1; y > 0; y--)
             {
                 for (int x = X - 1 - y; x >= 0; x--)
                 {
+                    // Saving current index
                     int ind = y * X + x;
 
-                    if (pleasure[x, y] > 0)
+                    // If pleasure is > 1 adding edge from start to ind with weight = pleasure - 1
+                    if (pleasure[x, y] > 1)
                     {
-                        g.AddEdge(start, ind, pleasure[x, y]);
-                        values[x, y] = pleasure[x, y];
-
-                        if (pleasure[x, y] > 1 && y > 0)
-                        {
-                            g.AddEdge(ind, ind - X, pleasure[x, y] - 1);
-                            g.AddEdge(ind, ind - X + 1, pleasure[x, y] - 1);
-                        }
-                    }
-
-                    if (y + 1 < Y)
-                    {
-                        int parent = ind + X;
-                        if (values[x, y + 1] > 1)
-                        {
-                            g.AddEdge(parent, ind, values[x, y + 1] - 1);
-                            values[x, y] += values[x, y + 1] - 1;
-                        }
-
-                        parent -= 1;
-                        if (x - 1 >= 0 && values[x - 1, y + 1] > 1)
-                        {
-                            g.AddEdge(parent, ind, values[x - 1, y + 1] - 1);
-                            values[x, y] += values[x - 1, y + 1] - 1;
-                        }
+                        g.AddEdge(start, ind, pleasure[x, y] - 1);
                     }
                     
+                    // Adding pleasure to visited (without subtracting 1 for now)
+                    visited[x, y] += pleasure[x, y];
+
+                    // If visited is > 1 adding edges to children
+                    if (visited[x, y] > 1)
+                    {
+                        g.AddEdge(ind, ind - X, visited[x, y] - 1);
+                        visited[x, y - 1] += visited[x, y] - 1; 
+                        g.AddEdge(ind, ind - X + 1, visited[x, y] - 1);
+                        visited[x + 1, y - 1] += visited[x, y] - 1; 
+                    }
                 }
             }
 
-            for (int i = 0; i < Y; i++)
+            // If values in the 0 row are positive add edges from them to the end
+            for (int x = X - 1; x >= 0; x--)
             {
-                if (values[i, 0] > 1)
-                    g.AddEdge(i, end, values[i, 0] - 1);
+                if (visited[x, 0] > 0)
+                    g.AddEdge(x, end, visited[x, 0]);
             }
 
             (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
