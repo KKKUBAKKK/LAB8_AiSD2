@@ -62,8 +62,72 @@ namespace ASD
         /// <returns>Maksymalna wartość zadowolenia z budowli; jeśli nie istnieje budowla zadowalająca Kazika, zależy zwrócić null.</returns>
         public int? Stage2GetOptimalBuilding(int l, int h, int[,] pleasure, out (int x, int y)[] blockOrder)
         {
-            blockOrder = null;
-            return null;
+            int X = l;
+            int Y = h;
+            DiGraph<int> g = new DiGraph<int>(X * Y + 2);
+            int start = X * Y;
+            int end = X * Y + 1;
+            int allFlows = 0;
+
+            for (int y = Y - 1; y > 0; y--)
+            {
+                for (int x = X - 1 - y; x >= 0; x--)
+                {
+                    int ind = y * X + x;
+                    if (pleasure[x, y] > 0)
+                    {
+                        g.AddEdge(start, ind, pleasure[x, y]);
+                        allFlows += pleasure[x, y];
+                    }
+                    g.AddEdge(ind, end, 1);
+                    g.AddEdge(ind, ind - X, Int32.MaxValue);
+                    g.AddEdge(ind, ind - X + 1, Int32.MaxValue);
+                }
+            }
+
+            for (int x = 0; x < X; x++)
+            {
+                if (pleasure[x, 0] > 0)
+                {
+                    g.AddEdge(start, x, pleasure[x, 0]);
+                    allFlows += pleasure[x, 0];
+                }
+                g.AddEdge(x, end, 1);
+            }
+
+            (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
+
+            if (allFlows <= maxFlow)
+            {
+                blockOrder = new (int x, int y)[0];
+                return null;
+            }
+
+            bool[,] visited = new bool[X, Y];
+            int myFlow = 0;
+            List<(int x, int y)> blocks = new List<(int x, int y)>();
+            for (int y = 0; y < Y; y++)
+            {
+                for (int x = 0; x < X - y; x++)
+                {
+                    int ind = y * X + x;
+                    if (y == 0 && graphFlow.HasEdge(ind, end))
+                    {
+                        blocks.Add((x, y));
+                        visited[x, y] = true;
+                        myFlow += pleasure[x, y];
+                    }
+                    else if (y > 0 && visited[x, y - 1] && visited[x + 1, y - 1] && graphFlow.HasEdge(ind, end))
+                    {
+                        blocks.Add((x, y));
+                        visited[x, y] = true;
+                        myFlow += pleasure[x, y];
+                    }
+                }
+            }
+
+            blockOrder = blocks.ToArray();
+            return myFlow - blocks.Count;
         }
     }
 }
