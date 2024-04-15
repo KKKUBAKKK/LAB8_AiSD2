@@ -107,45 +107,39 @@ namespace ASD
             }
 
             // Creating residual network
-            DiGraph<int> weirdResidualNetwork = new DiGraph<int>(graphFlow.VertexCount, graphFlow.Representation);
-            foreach (var edge in g.BFS().SearchAll())
+            DiGraph<int> resNet = new DiGraph<int>(g.VertexCount, graphFlow.Representation);
+            foreach (var edge in g.DFS().SearchAll())
             {
-                if (graphFlow.HasEdge(edge.From, edge.To))
+                if (!graphFlow.HasEdge(edge.From, edge.To))
                 {
-                    int flow = graphFlow.GetEdgeWeight(edge.From, edge.To);
-                    weirdResidualNetwork.AddEdge(edge.To, edge.From, flow);
-                    if (edge.Weight - flow > 0)
-                        weirdResidualNetwork.AddEdge(edge.From, edge.To, edge.Weight - flow);
+                    resNet.AddEdge(edge.From, edge.To, edge.Weight);
+                    continue;
                 }
-                else
-                {
-                    weirdResidualNetwork.AddEdge(edge.From, edge.To, edge.Weight);
-                }
-            }
 
+                int flow = graphFlow.GetEdgeWeight(edge.From, edge.To);
+                if (edge.Weight - flow > 0)
+                    resNet.AddEdge(edge.From, edge.To, edge.Weight - flow);
+                resNet.AddEdge(edge.To, edge.From, flow);
+            }
+            
+            // Finding the minimal cut
             bool[,] built = new bool[X, Y];
-            foreach (var edge in weirdResidualNetwork.BFS().SearchFrom(start))
+            foreach (var edge in resNet.BFS().SearchFrom(start))
             {
-                if (edge.To < 25)
+                if (edge.To < X * Y)
                     built[edge.To % X, edge.To / X] = true;
             }
-
-            int builtFlow = 0;
-            List<(int x, int y)> blocksBuilt = new List<(int x, int y)>();
+            
+            // Creating a list of used blocks
+            List<(int x, int y)> builtBlocks = new List<(int x, int y)>();
             for (int y = 0; y < Y; y++)
-            {
                 for (int x = 0; x < X - y; x++)
-                {
-                    if (!built[x, y])
-                        continue;
-                    
-                    blocksBuilt.Add((x, y));
-                    builtFlow += pleasure[x, y];
-                }
-            }
-
-            blockOrder = blocksBuilt.ToArray();
-            return builtFlow - blockOrder.Length;
+                    if (built[x, y])
+                        builtBlocks.Add((x, y));
+            
+            // Returning found values
+            blockOrder = builtBlocks.ToArray();
+            return allFlows - maxFlow;
         }
     }
 }
