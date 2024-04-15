@@ -62,6 +62,7 @@ namespace ASD
         /// <returns>Maksymalna wartość zadowolenia z budowli; jeśli nie istnieje budowla zadowalająca Kazika, zależy zwrócić null.</returns>
         public int? Stage2GetOptimalBuilding(int l, int h, int[,] pleasure, out (int x, int y)[] blockOrder)
         {
+            // USING STAGE 1
             int X = l;
             int Y = h;
             DiGraph<int> g = new DiGraph<int>(X * Y + 2);
@@ -96,38 +97,55 @@ namespace ASD
             }
 
             (int maxFlow, DiGraph<int> graphFlow) = Flows.FordFulkerson(g, start, end);
+            // END OF STAGE 1
 
+            // If all pleasure used is lower than o equal to maxFlow, then task is impossible
             if (allFlows <= maxFlow)
             {
                 blockOrder = new (int x, int y)[0];
                 return null;
             }
 
-            bool[,] visited = new bool[X, Y];
-            int myFlow = 0;
-            List<(int x, int y)> blocks = new List<(int x, int y)>();
+            // Creating residual network
+            DiGraph<int> weirdResidualNetwork = new DiGraph<int>(graphFlow.VertexCount, graphFlow.Representation);
+            foreach (var edge in g.BFS().SearchAll())
+            {
+                if (graphFlow.HasEdge(edge.From, edge.To))
+                {
+                    int flow = graphFlow.GetEdgeWeight(edge.From, edge.To);
+                    weirdResidualNetwork.AddEdge(edge.To, edge.From, flow);
+                    if (edge.Weight - flow > 0)
+                        weirdResidualNetwork.AddEdge(edge.From, edge.To, edge.Weight - flow);
+                }
+                else
+                {
+                    weirdResidualNetwork.AddEdge(edge.From, edge.To, edge.Weight);
+                }
+            }
+
+            bool[,] built = new bool[X, Y];
+            foreach (var edge in weirdResidualNetwork.BFS().SearchFrom(start))
+            {
+                if (edge.To < 25)
+                    built[edge.To % X, edge.To / X] = true;
+            }
+
+            int builtFlow = 0;
+            List<(int x, int y)> blocksBuilt = new List<(int x, int y)>();
             for (int y = 0; y < Y; y++)
             {
                 for (int x = 0; x < X - y; x++)
                 {
-                    int ind = y * X + x;
-                    if (y == 0 && graphFlow.HasEdge(ind, end))
-                    {
-                        blocks.Add((x, y));
-                        visited[x, y] = true;
-                        myFlow += pleasure[x, y];
-                    }
-                    else if (y > 0 && visited[x, y - 1] && visited[x + 1, y - 1] && graphFlow.HasEdge(ind, end))
-                    {
-                        blocks.Add((x, y));
-                        visited[x, y] = true;
-                        myFlow += pleasure[x, y];
-                    }
+                    if (!built[x, y])
+                        continue;
+                    
+                    blocksBuilt.Add((x, y));
+                    builtFlow += pleasure[x, y];
                 }
             }
 
-            blockOrder = blocks.ToArray();
-            return myFlow - blocks.Count;
+            blockOrder = blocksBuilt.ToArray();
+            return builtFlow - blockOrder.Length;
         }
     }
 }
