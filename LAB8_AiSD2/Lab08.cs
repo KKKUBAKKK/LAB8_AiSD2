@@ -110,16 +110,17 @@ namespace ASD
             DiGraph<int> resNet = new DiGraph<int>(g.VertexCount, graphFlow.Representation);
             foreach (var edge in g.DFS().SearchAll())
             {
-                if (!graphFlow.HasEdge(edge.From, edge.To))
+                if (graphFlow.HasEdge(edge.From, edge.To))
+                {
+                    int flow = graphFlow.GetEdgeWeight(edge.From, edge.To);
+                    if (edge.Weight - flow > 0)
+                        resNet.AddEdge(edge.From, edge.To, edge.Weight - flow);
+                    resNet.AddEdge(edge.To, edge.From, flow);
+                }
+                else
                 {
                     resNet.AddEdge(edge.From, edge.To, edge.Weight);
-                    continue;
                 }
-
-                int flow = graphFlow.GetEdgeWeight(edge.From, edge.To);
-                if (edge.Weight - flow > 0)
-                    resNet.AddEdge(edge.From, edge.To, edge.Weight - flow);
-                resNet.AddEdge(edge.To, edge.From, flow);
             }
             
             // Finding the minimal cut
@@ -133,9 +134,13 @@ namespace ASD
             // Creating a list of used blocks
             List<(int x, int y)> builtBlocks = new List<(int x, int y)>();
             for (int y = 0; y < Y; y++)
+            {
                 for (int x = 0; x < X - y; x++)
+                {
                     if (built[x, y])
                         builtBlocks.Add((x, y));
+                }
+            }
             
             // Returning found values
             blockOrder = builtBlocks.ToArray();
